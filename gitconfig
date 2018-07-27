@@ -1,0 +1,5 @@
+[user]
+        email = julio.delgadomangas@gmail.com
+        name = Julio Delgado
+[core]
+        editor = emacs -nw
