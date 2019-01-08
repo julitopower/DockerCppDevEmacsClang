@@ -15,13 +15,20 @@ RUN add-apt-repository ppa:kelleyk/emacs && apt-get update \
                        git \
                        emacs25 \
                        gcc \
-                       g++
-
+                       g++ \
+                       libclang-6.0-dev \
+                       cmake \
+                       python3-pip \
+                       rc \
+                       libboost-all-dev
 
 
 # Install emacs configuration
 COPY emacs.d ${HOME}/.emacs.d
 RUN emacs --batch -l ${HOME}/.emacs.d/init.el
+RUN mkdir -p /tmp/irony_install/ && cd /tmp/irony_install/ && cmake -DCMAKE_INSTALL_PREFIX\=/root/.emacs.d/irony/ \
+    /root/.emacs.d/elpa/irony-20181218.2241/server && \
+    cmake --build . --use-stderr --config Release --target install
 
 # Install gitconfig
 COPY gitconfig ${HOME}/.gitconfig
@@ -29,9 +36,6 @@ COPY gitconfig ${HOME}/.gitconfig
 # Enable 256 ANSI colors for Emacs
 ENV TERM xterm-256color
 
-RUN apt-get install -y libclang-6.0-dev cmake
 RUN ln /usr/bin/clang-6.0 /usr/bin/clang
-RUN apt-get install -y python3-pip rc
 RUN pip3 install pytest numpy ujson
-RUN apt-get install libboost-all-dev -y
 RUN git clone https://github.com/Tencent/rapidjson.git && cp -r rapidjson/include/* /usr/include/
