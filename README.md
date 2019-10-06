@@ -1,7 +1,7 @@
 # Usage
 
 Pull the image from
-[DockerHub](https://hub.docker.com/r/julitopower/dockercppemacsclang/).
+[DockerHub](https://hub.docker.com/r/julitopower/dockercppdevemacsclang).
 
 # Build
 
