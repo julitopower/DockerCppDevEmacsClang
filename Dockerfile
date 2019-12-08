@@ -27,7 +27,7 @@ RUN add-apt-repository ppa:kelleyk/emacs && apt-get update \
 COPY emacs.d ${HOME}/.emacs.d
 RUN emacs --batch -l ${HOME}/.emacs.d/init.el
 RUN mkdir -p /tmp/irony_install/ && cd /tmp/irony_install/ && cmake -DCMAKE_INSTALL_PREFIX\=/root/.emacs.d/irony/ \
-    /root/.emacs.d/elpa/irony-20190703.1732/server && \
+    /root/.emacs.d/elpa/irony-20191009.2139/server && \
     cmake --build . --use-stderr --config Release --target install
 
 # Install gitconfig
@@ -39,3 +39,11 @@ ENV TERM xterm-256color
 RUN ln /usr/bin/clang-6.0 /usr/bin/clang
 RUN pip3 install pytest numpy ujson
 RUN git clone https://github.com/Tencent/rapidjson.git && cp -r rapidjson/include/* /usr/include/
+
+# Install eigen
+RUN git clone https://github.com/eigenteam/eigen-git-mirror.git && cd eigen-git-mirror && cp -r Eigen /usr/include/
+
+# Install Poco libraries
+RUN mkdir -p /opt/src && cd /opt/src/ && git clone https://github.com/pocoproject/poco && \
+    cd /opt/src/poco/ && rm -rf cmake-build && mkdir cmake-build &&  \
+    cd cmake-build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4 && make install
