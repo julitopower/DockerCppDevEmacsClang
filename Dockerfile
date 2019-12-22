@@ -19,9 +19,15 @@ RUN add-apt-repository ppa:kelleyk/emacs && apt-get update \
                        libclang-6.0-dev \
                        cmake \
                        python3-pip \
-                       rc \
-                       libboost-all-dev
+                       libboost-all-dev \
+                       doxygen \
+                       graphviz
 
+
+# RTAGS
+RUN mkdir -p /opt/src && cd /opt/src/ && git clone --recursive https://github.com/Andersbakken/rtags.git && \
+    cd rtags && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 . && make
+ENV PATH "${PATH}:/opt/src/rtags/bin/"
 
 # Install emacs configuration
 COPY emacs.d ${HOME}/.emacs.d
@@ -47,3 +53,6 @@ RUN git clone https://github.com/eigenteam/eigen-git-mirror.git && cd eigen-git-
 RUN mkdir -p /opt/src && cd /opt/src/ && git clone https://github.com/pocoproject/poco && \
     cd /opt/src/poco/ && rm -rf cmake-build && mkdir cmake-build &&  \
     cd cmake-build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4 && make install
+
+# Final cleanup to help reduce side when building with --squash
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
