@@ -19,11 +19,11 @@ Pull the image from
 Build the image by executing
 
 ```
-$ docker build -t dockercppemacsclang:latest .
+$ docker build -t dockercppemacsclang:gcc9 .
 ```
 
 # Run
 
 ```
-$ docker run -it --rm -v ~:/opt/src dockercppemacsclang:latest
+$ docker run -it --rm -v ~:/opt/src dockercppemacsclang:gcc9
 ```
