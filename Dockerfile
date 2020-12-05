@@ -28,9 +28,9 @@ RUN sed s/base/dev/ ~/.bashrc -i
 # Install emacs configuration
 COPY emacs.d ${HOME}/.emacs.d
 RUN emacs --batch -l ${HOME}/.emacs.d/init.el
-RUN mkdir -p /tmp/irony_install/ && cd /tmp/irony_install/ && cmake -DCMAKE_INSTALL_PREFIX\=/root/.emacs.d/irony/ \
-    /root/.emacs.d/elpa/irony-20200130.849/server && \
-    cmake --build . --use-stderr --config Release --target install
+#RUN mkdir -p /tmp/irony_install/ && cd /tmp/irony_install/ && cmake -DCMAKE_INSTALL_PREFIX\=/root/.emacs.d/irony/ \
+#    /root/.emacs.d/elpa/irony-20200130.849/server && \
+#    cmake --build . --use-stderr --config Release --target install
 
 # Install gitconfig
 COPY gitconfig ${HOME}/.gitconfig

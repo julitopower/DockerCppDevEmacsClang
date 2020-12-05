@@ -1,6 +1,5 @@
 ;;; initfile --- Summary:
 ;;; Commentary:
-;; Emacs 24.5.1
 ;; Many places were referenced in constructing this file.  Here are some:
 ;; http://aaronbedra.com/emacs.d/
 ;; https://github.com/atilaneves/cmake-ide
@@ -15,18 +14,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (server-start)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mac OS X Tweaks
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Add these to the PATH so that proper executables are found
-;; This is probably just for Mac OS
-(setenv "PATH" (concat (getenv "PATH") ":/usr/texbin"))
-(setenv "PATH" (concat (getenv "PATH") ":/usr/bin"))
-(setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
-(setq exec-path (append exec-path '("/usr/texbin")))
-(setq exec-path (append exec-path '("/usr/bin")))
-(setq exec-path (append exec-path '("/usr/local/bin")))
-
 ;; We don't want to type yes and no all the time so, do y and n
 (defalias 'yes-or-no-p 'y-or-n-p)
 ;; Disable the horrid auto-save
@@ -39,27 +26,22 @@
 ;; installed packages.  Don't delete this line.  If you don't want it,
 ;; just comment it out by adding a semicolon to the start of the line.
 ;; You may delete these explanatory comments.
-;; (package-initialize)
 (require 'package) ;; You might already have this line
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/"))
-(when (< emacs-major-version 24)
-  ;; For important compatibility libraries like cl-lib
-  (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
 ;; You might already have this line
 (package-initialize)
 ;; list the packages you want
 (defvar package-list)
 (setq package-list '(async auctex auto-complete autopair clang-format cmake-ide
-                           cmake-mode company company-irony company-rtags
-                           company-irony-c-headers dash epl flycheck
-                           flycheck-irony flycheck-pyflakes
+                           eglot cmake-mode company
+                           dash epl flycheck flycheck-pyflakes
                            google-c-style helm helm-core helm-ctest
-                           helm-flycheck helm-flyspell helm-ls-git helm-ls-hg
-                           hungry-delete irony
+                           helm-flycheck helm-ls-git helm-ls-hg
+                           hungry-delete 
                            let-alist levenshtein magit markdown-mode pkg-info
-                           popup rtags seq solarized-theme vlf web-mode
-                           window-numbering writegood-mode yasnippet))
+                           popup seq solarized-theme vlf web-mode
+                           window-numbering writegood-mode yasnippet yasnippet-snippets))
 ;; fetch the list of packages available
 (unless package-archive-contents
   (package-refresh-contents))
@@ -88,7 +70,7 @@
 ;; may not be correct. This can be done by specifying cmake-compile-command
 ;; in the project root directory. For example, I need to specify CHARM_DIR
 ;; and I want to build in a different directory (out of source) so I set:
-;; ((nil . ((cmake-ide-build-dir . "../ParBuild/"))))
+;; ((nil . ((cmake-ide-build-dir . "./build/"))))
 ;; ((nil . ((cmake-compile-command . "-DCHARM_DIR=/Users/nils/SpECTRE/charm/"))))
 ;; You can also set arguments to the C++ compiler, I use clang so:
 ;; ((nil . ((cmake-ide-clang-flags-c++ . "-I/Users/nils/SpECTRE/Amr/"))))
@@ -98,11 +80,11 @@
 ;; recompiling the directory using M-x byte-force-recompile
 ;; Require flycheck to be present
 (require 'flycheck)
-;; Force flycheck to always use c++11 support. We use
+;; Force flycheck to always use c++17 support. We use
 ;; the clang language backend so this is set to clang
 (add-hook 'c++-mode-hook
           (lambda ()
-            (setq flycheck-clang-language-standard "c++11")
+            (setq flycheck-clang-language-standard "c++17")
             )
           )
 ;; Turn flycheck on everywhere
@@ -111,26 +93,17 @@
 ;; Use flycheck-pyflakes for python. Seems to work a little better.
 (require 'flycheck-pyflakes)
 
-;; Load rtags and start the cmake-ide-setup process
-(require 'rtags)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Setup cmake-ide
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'cmake-ide)
 (cmake-ide-setup)
 ;; Set cmake-ide-flags-c++ to use C++11
-(setq cmake-ide-flags-c++ (append '("-std=c++11")))
+(setq cmake-ide-build-dir "./build/")
+(setq cmake-ide-flags-c++ (append '("-std=c++17")))
 ;; We want to be able to compile with a keyboard shortcut
 (global-set-key (kbd "C-c m") 'cmake-ide-compile)
 
-;; Set rtags to enable completions and use the standard keybindings.
-;; A list of the keybindings can be found at:
-;; http://syamajala.github.io/c-ide.html
-(setq rtags-autostart-diagnostics t)
-(rtags-diagnostics)
-(setq rtags-completions-enabled t)
-(rtags-enable-standard-keybindings)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set up helm
@@ -170,79 +143,28 @@
 (eval-after-load 'flycheck
   '(define-key flycheck-mode-map (kbd "C-c ! h") 'helm-flycheck))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Set up code completion with company and irony
+;; Set up code completion with company + eglot
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'company)
-(require 'company-rtags)
 (global-company-mode)
-
-;; Enable semantics mode for auto-completion
 (require 'cc-mode)
-(require 'semantic)
-(global-semanticdb-minor-mode 1)
-(global-semantic-idle-scheduler-mode 1)
-(semantic-mode 1)
 
-;; Setup irony-mode to load in c-modes
-(require 'irony)
-(require 'company-irony-c-headers)
-(require 'cl)
-(add-hook 'c++-mode-hook 'irony-mode)
-(add-hook 'c-mode-hook 'irony-mode)
-(add-hook 'objc-mode-hook 'irony-mode)
+;; Eglot + clandg as language server
+(require 'eglot)
+(add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+(add-hook 'c-mode-hook 'eglot-ensure)
+(add-hook 'c++-mode-hook 'eglot-ensure)
 
-;; irony-mode hook that is called when irony is triggered
-(defun my-irony-mode-hook ()
-  "Custom irony mode hook to remap keys."
-  (define-key irony-mode-map [remap completion-at-point]
-    'irony-completion-at-point-async)
-  (define-key irony-mode-map [remap complete-symbol]
-    'irony-completion-at-point-async))
-
-(add-hook 'irony-mode-hook 'my-irony-mode-hook)
-(add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
-
-;; company-irony setup, c-header completions
-(add-hook 'irony-mode-hook 'company-irony-setup-begin-commands)
-;; Remove company-semantic because it has higher precedance than company-clang
-;; Using RTags completion is also faster than semantic, it seems. Semantic
-;; also provides a bunch of technically irrelevant completions sometimes.
-;; All in all, RTags just seems to do a better job.
-(setq company-backends (delete 'company-semantic company-backends))
-;; Enable company-irony and several other useful auto-completion modes
+;; Enable several other useful auto-completion modes
 ;; We don't use rtags since we've found that for large projects this can cause
 ;; async timeouts. company-semantic (after company-clang!) works quite well
 ;; but some knowledge some knowledge of when best to trigger is still necessary.
 (eval-after-load 'company
   '(add-to-list
-    'company-backends '(company-irony-c-headers
-                        company-irony company-yasnippet
-                        company-clang company-rtags)
+    'company-backends '(company-yasnippet company-cmake)
     )
-  )
-
-(defun my-disable-semantic ()
-  "Disable the company-semantic backend."
-  (interactive)
-  (setq company-backends (delete '(company-irony-c-headers
-                                   company-irony company-yasnippet
-                                   company-clang company-rtags
-                                   company-semantic) company-backends))
-  (add-to-list
-   'company-backends '(company-irony-c-headers
-                       company-irony company-yasnippet
-                       company-clang company-rtags))
-  )
-(defun my-enable-semantic ()
-  "Enable the company-semantic backend."
-  (interactive)
-  (setq company-backends (delete '(company-irony-c-headers
-                                   company-irony company-yasnippet
-                                   company-clang) company-backends))
-  (add-to-list
-   'company-backends '(company-irony-c-headers
-                       company-irony company-yasnippet company-clang))
   )
 
 ;; Zero delay when pressing tab
@@ -252,32 +174,6 @@
 ;; Delay when idle because I want to be able to think without
 ;; completions immediately being called and slowing me down.
 (setq company-idle-delay 0.2)
-
-;; Prohibit semantic from searching through system headers. We want
-;; company-clang to do that for us.
-(setq-mode-local c-mode semanticdb-find-default-throttle
-                 '(local project unloaded recursive))
-(setq-mode-local c++-mode semanticdb-find-default-throttle
-                 '(local project unloaded recursive))
-
-(semantic-remove-system-include "/usr/include/" 'c++-mode)
-(semantic-remove-system-include "/usr/local/include/" 'c++-mode)
-(add-hook 'semantic-init-hooks
-          'semantic-reset-system-include)
-
-;; rtags Seems to be really slow sometimes so I disable using
-;; it with irony mode
-;; (require 'flycheck-rtags)
-;; (defun my-flycheck-rtags-setup ()
-;;   (flycheck-select-checker 'rtags)
-;;   ;; RTags creates more accurate overlays.
-;;   (setq-local flycheck-highlighting-mode nil)
-;;   (setq-local flycheck-check-syntax-automatically nil))
-;; ;; c-mode-common-hook is also called by c++-mode
-;; (add-hook 'c-mode-common-hook #'my-flycheck-rtags-setup)
-
-;; (eval-after-load 'flycheck
-;;   '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
 
 ;; Add flycheck to helm
 (require 'helm-flycheck) ;; Not necessary if using ELPA package
@@ -433,47 +329,6 @@
 ;; Undo, basically C-x u
 (global-set-key (kbd "C-/") 'undo)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Flyspell Mode for Spelling Corrections
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(require 'flyspell)
-;; The welcome message is useless and can cause problems
-(setq flyspell-issue-welcome-flag nil)
-;; Fly spell keyboard shortcuts so no mouse is needed
-;; Use helm with flyspell
-(define-key flyspell-mode-map (kbd "<f8>") 'helm-flyspell-correct)
-;; (global-set-key (kbd "<f8>") 'ispell-word)
-(global-set-key (kbd "C-S-<f8>") 'flyspell-mode)
-(global-set-key (kbd "C-M-<f8>") 'flyspell-buffer)
-(global-set-key (kbd "C-<f8>") 'flyspell-check-previous-highlighted-word)
-(global-set-key (kbd "M-<f8>") 'flyspell-check-next-highlighted-word)
-;; Set the way word highlighting is done
-(defun flyspell-check-next-highlighted-word ()
-  "Custom function to spell check next highlighted word."
-  (interactive)
-  (flyspell-goto-next-error)
-  (ispell-word)
-  )
-
-;; Spell check comments in c++ and c common
-(add-hook 'c++-mode-hook  'flyspell-prog-mode)
-(add-hook 'c-mode-common-hook 'flyspell-prog-mode)
-
-;; Enable flyspell in text mode
-(if (fboundp 'prog-mode)
-    (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-  (dolist (hook '(lisp-mode-hook emacs-lisp-mode-hook scheme-mode-hook
-                                 clojure-mode-hook ruby-mode-hook yaml-mode
-                                 python-mode-hook shell-mode-hook php-mode-hook
-                                 css-mode-hook haskell-mode-hook caml-mode-hook
-                                 nxml-mode-hook crontab-mode-hook perl-mode-hook
-                                 tcl-mode-hook javascript-mode-hook))
-    (add-hook hook 'flyspell-prog-mode)))
-
-(dolist (hook '(text-mode-hook))
-  (add-hook hook (lambda () (flyspell-mode 1))))
-(dolist (hook '(change-log-mode-hook log-edit-mode-hook))
-  (add-hook hook (lambda () (flyspell-mode -1))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Magit
