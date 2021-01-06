@@ -1,4 +1,4 @@
-FROM continuumio/anaconda3
+FROM nvidia/cuda:11.1-devel-ubuntu20.04
 
 MAINTAINER Julio Delgado <julio.delgadomangas@gmail.com>
 ENV USER root
@@ -6,14 +6,21 @@ ENV HOME /root
 ENV CONDA_ENV_NAME=dev
 WORKDIR /opt/dev-conda/
 
+RUN apt-get update && apt-get install wget vim -y
+
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+&& chmod +x Miniconda3-latest-Linux-x86_64.sh \
+&& bash Miniconda3-latest-Linux-x86_64.sh -b -p ./miniconda
+
 # Create the environment:
 COPY environment.yml .
-RUN conda update -n base -c defaults conda
-RUN conda env create -f environment.yml
+RUN ./miniconda/bin/conda update -n base -c defaults conda
+RUN ./miniconda/bin/conda init
+RUN ./miniconda/bin/conda env create -f environment.yml
 
 # Make RUN commands use the new environment. Unfortunately ARG/ENV don't work here
 # So we have to hardcode the name of the conda environment
-SHELL ["conda", "run", "-n", "dev", "/bin/bash", "-c"]
+SHELL ["/opt/dev-conda/miniconda/bin/conda", "run", "-n", "dev", "/bin/bash", "-c"]
 
 # Make sure CMake can find the compiler
 #ENV CC /opt/conda/envs/$CONDA_ENV_NAME/bin/x86_64-conda-linux-gnu-cc
